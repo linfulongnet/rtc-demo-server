@@ -25,15 +25,15 @@ const (
 	pingPeriod = (pongWait * 9) / 10
 
 	// Maximum message size allowed from peer.
-	maxMessageSize = 512
+	maxMessageSize = 4096
 )
 
 var (
 	newline  = []byte{'\n'}
 	space    = []byte{' '}
 	upGrader = websocket.Upgrader{
-		ReadBufferSize:  1024,
-		WriteBufferSize: 1024,
+		ReadBufferSize:  4096,
+		WriteBufferSize: 4096,
 		CheckOrigin: func(r *http.Request) bool {
 			return true
 		},
@@ -60,8 +60,8 @@ func (h *Hub) run() {
 	for {
 		select {
 		case client := <-h.register:
-			h.clients[client] = true
 			go func() {
+				h.clients[client] = true
 				client.requestInfo()
 				client.online()
 			}()
@@ -81,7 +81,7 @@ func (h *Hub) run() {
 				select {
 				case client.send <- broadMsg.message:
 				default:
-					log.Printf("***** client panic ******")
+					log.Println("***** client panic ******", client.info.Id)
 					client.hub.unregister <- client
 				}
 			}
@@ -115,19 +115,21 @@ type Client struct {
 func (c *Client) readPump() {
 	defer func() {
 		c.hub.unregister <- c
-		_ = c.conn.Close()
 	}()
+
 	c.conn.SetReadLimit(maxMessageSize)
 	_ = c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error {
 		_ = c.conn.SetReadDeadline(time.Now().Add(pongWait))
 		return nil
 	})
+
 	for {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
+			log.Println("[readPump error]", err)
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
+				log.Println("[readPump error]", err)
 			}
 			break
 		}
@@ -142,6 +144,7 @@ func (c *Client) writePump() {
 		ticker.Stop()
 		_ = c.conn.Close()
 	}()
+
 	for {
 		select {
 		case message, ok := <-c.send:
@@ -253,7 +256,7 @@ func (c *Client) online() {
 func (c *Client) offline() {
 	defer func() {
 		// 关闭客户端连接
-		// time.Sleep(1 * time.Second)
+		_ = c.conn.Close()
 		close(c.send)
 		delete(c.hub.clients, c)
 	}()
