@@ -132,7 +132,7 @@ func (c *Client) readPump() {
 		}
 
 		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		go processSingnal(c, message)
+		go processSignal(c, message)
 	}
 }
 func (c *Client) writePump() {

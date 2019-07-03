@@ -27,11 +27,11 @@ type Signaling struct {
 	Source  int           `json:"source"`
 }
 
-func processSingnal(c *Client, message []byte) {
+func processSignal(c *Client, message []byte) {
 	sl := &Signaling{}
 	err := json.Unmarshal(message, sl)
 	if err != nil {
-		log.Fatal("[processSingnal] Unmarshal message error: ", err)
+		log.Fatal("[processSignal] Unmarshal message error: ", err)
 	}
 	log.Printf("[receive] id:%d addr:%s, msg:%v", c.info.Id, c.conn.RemoteAddr().String(), sl)
 	switch sl.Command {
