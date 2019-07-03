@@ -14,6 +14,7 @@ const (
 	UserList
 	Offer
 	Answer
+	Candidate
 	HangUp
 	Transfer
 )
@@ -30,7 +31,7 @@ func processSingnal(c *Client, message []byte) {
 	sl := &Signaling{}
 	err := json.Unmarshal(message, sl)
 	if err != nil {
-		log.Fatal("Unmarshal message error: ", err)
+		log.Fatal("[processSingnal] Unmarshal message error: ", err)
 	}
 	log.Printf("[receive] id:%d addr:%s, msg:%v", c.info.Id, c.conn.RemoteAddr().String(), sl)
 	switch sl.Command {
@@ -41,13 +42,13 @@ func processSingnal(c *Client, message []byte) {
 		c.clientList()
 		break
 	case Offer:
-		c.offer(sl)
-		break
+		fallthrough
 	case Answer:
-		c.answer(sl)
-		break
+		fallthrough
+	case Candidate:
+		fallthrough
 	case HangUp:
-		c.hangup(sl)
+		c.signal(sl)
 		break
 	case Transfer:
 		log.Println("transfer:", sl.Command)

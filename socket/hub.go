@@ -17,13 +17,10 @@ import (
 const (
 	// Time allowed to write a message to the peer.
 	writeWait = 10 * time.Second
-
 	// Time allowed to read the next pong message from the peer.
 	pongWait = 60 * time.Second
-
 	// Send pings to peer with this period. Must be less than pongWait.
 	pingPeriod = (pongWait * 9) / 10
-
 	// Maximum message size allowed from peer.
 	maxMessageSize = 4096
 )
@@ -294,24 +291,7 @@ func (c *Client) clientList() {
 	}
 	c.sendMsg(slMsg)
 }
-
-func (c *Client) offer(slMsg *Signaling) {
-	targetClient := c.hub.getClient(slMsg.Target)
-	if targetClient == nil {
-		return
-	}
-
-	c.sendTo(targetClient, slMsg)
-}
-func (c *Client) answer(slMsg *Signaling) {
-	targetClient := c.hub.getClient(slMsg.Target)
-	if targetClient == nil {
-		return
-	}
-
-	c.sendTo(targetClient, slMsg)
-}
-func (c *Client) hangup(slMsg *Signaling) {
+func (c *Client) signal(slMsg *Signaling) {
 	targetClient := c.hub.getClient(slMsg.Target)
 	if targetClient == nil {
 		return
